@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>บันทึกรายจ่าย</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbfaf7;--card:#fff;--ink:#23252b;--mute:#8a8d96;--line:#eceae4;--shadow:0 1px 2px rgba(35,37,43,.06);
+--c1:#ff8a5c;--c2:#ffc233;--c3:#3ec7a0;--c4:#a77bff;--c5:#4aa8ff;--c6:#ff6f9c;--c7:#ff5f6d;--c8:#8fa0b3;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181c;--card:#222328;--ink:#f1f1ee;--mute:#9a9da6;--line:#2f3138;--shadow:none}}
+:root[data-theme="dark"]{--bg:#17181c;--card:#222328;--ink:#f1f1ee;--mute:#9a9da6;--line:#2f3138;--shadow:none}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Thai',system-ui,sans-serif;line-height:1.5}
+main{max-width:520px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+h1{font-size:20px;margin:0;font-weight:700}
+.month{display:flex;align-items:center;gap:4px}
+.month button{border:0;background:none;color:var(--mute);font-size:20px;cursor:pointer;padding:4px 10px;border-radius:8px}
+.month span{font-weight:500;min-width:110px;text-align:center}
+.total{background:var(--card);border-radius:20px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.total small{color:var(--mute)}
+.total b{display:block;font-size:38px;font-weight:700;line-height:1.2}
+.bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--line);margin:14px 0 12px}
+.bar i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px}
+.legend div{display:flex;align-items:center;gap:6px;color:var(--mute)}
+.legend em{width:8px;height:8px;border-radius:50%;flex:none}
+.legend span{margin-left:auto;color:var(--ink);font-weight:500}
+.add{margin-top:16px;background:var(--card);border-radius:20px;padding:16px;border:1px solid var(--line);box-shadow:var(--shadow)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{border:1.5px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:13px;padding:6px 12px;border-radius:99px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.chip em{width:8px;height:8px;border-radius:50%}
+.chip.on{color:#fff;border-color:transparent}
+.row{display:flex;gap:8px;margin-bottom:8px}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;width:100%}
+input:focus-visible,button:focus-visible{outline:2px solid var(--c5);outline-offset:2px}
+#amt{font-size:20px;font-weight:700}
+.save{width:100%;border:0;border-radius:14px;padding:12px;font:inherit;font-weight:700;color:#fff;background:var(--ink);cursor:pointer;margin-top:4px}
+:root[data-theme="dark"] .save{color:#17181c}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .save{color:#17181c}}
+.save:active{transform:scale(.98)}
+h2{font-size:15px;margin:26px 0 8px;font-weight:500;color:var(--mute)}
+.item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.dot{width:36px;height:36px;border-radius:12px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
+.item div{flex:1;min-width:0}
+.item p{margin:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item small{color:var(--mute);font-size:12px}
+.item b{font-weight:700}
+.del{border:0;background:none;color:var(--mute);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:8px}
+.empty{text-align:center;color:var(--mute);padding:28px 0;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<header><h1>บันทึกรายจ่าย</h1>
+<div class="month"><button id="prev" aria-label="เดือนก่อน">‹</button><span id="mlabel"></span><button id="next" aria-label="เดือนถัดไป">›</button></div></header>
+
+<section class="total"><small>รวมเดือนนี้</small><b id="sum">฿0</b>
+<div class="bar" id="bar"></div><div class="legend" id="legend"></div></section>
+
+<section class="add">
+<div class="chips" id="chips"></div>
+<div class="row"><input id="amt" type="number" inputmode="decimal" placeholder="จำนวนเงิน (บาท)" min="0"></div>
+<div class="row"><input id="note" type="text" placeholder="โน้ตสั้นๆ (ไม่ใส่ก็ได้)"><input id="date" type="date" style="max-width:150px"></div>
+<div class="row" id="otherRow" hidden><input id="other" type="text" placeholder="ระบุหมวดอื่นๆ เช่น ค่าเดินทาง"></div>
+<button class="save" id="save">บันทึกรายจ่าย</button>
+</section>
+
+<h2>รายการ</h2>
+<div id="list"></div>
+</main>
+<script>
+const CATS=[
+{id:'food',name:'ค่าอาหารหลัก',c:'var(--c1)'},
+{id:'snack',name:'ค่าซื้อขนม',c:'var(--c2)'},
+{id:'need',name:'ของใช้ทั่วไปที่จำเป็น',c:'var(--c3)'},
+{id:'treat',name:'ของเล่น / Fulfill ตัวเอง',c:'var(--c4)'},
+{id:'rent',name:'ค่าที่พัก',c:'var(--c5)'},
+{id:'parents',name:'ค่าใช้จ่ายสำหรับพ่อแม่',c:'var(--c6)'},
+{id:'gift',name:'ของขวัญ',c:'var(--c7)'},
+{id:'other',name:'อื่นๆ',c:'var(--c8)'}];
+const $=id=>document.getElementById(id);
+let data=[],cur='food',view=new Date();view.setDate(1);
+try{data=JSON.parse(localStorage.getItem('expenses')||'[]')}catch(e){data=[]}
+const persist=()=>{try{localStorage.setItem('expenses',JSON.stringify(data))}catch(e){}};
+const fmt=n=>'฿'+Number(n).toLocaleString('th-TH',{maximumFractionDigits:2});
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+$('date').value=today();
+
+function chips(){
+ $('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.id===cur?'on':''}" data-id="${c.id}" style="${c.id===cur?'background:'+c.c:''}"><em style="background:${c.id===cur?'#fff':c.c}"></em>${c.name}</button>`).join('');
+ $('otherRow').hidden=cur!=='other';
+}
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(b){cur=b.dataset.id;chips()}};
+
+function render(){
+ const key=view.getFullYear()+'-'+String(view.getMonth()+1).padStart(2,'0');
+ $('mlabel').textContent=view.toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+ const items=data.filter(x=>x.date.startsWith(key)).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+ const total=items.reduce((s,x)=>s+x.amt,0);
+ $('sum').textContent=fmt(total);
+ const by={};items.forEach(x=>by[x.cat]=(by[x.cat]||0)+x.amt);
+ $('bar').innerHTML=CATS.filter(c=>by[c.id]).map(c=>`<i style="width:${by[c.id]/total*100}%;background:${c.c}"></i>`).join('');
+ $('legend').innerHTML=CATS.filter(c=>by[c.id]).map(c=>`<div><em style="background:${c.c}"></em>${c.name}<span>${fmt(by[c.id])}</span></div>`).join('')||'<div>ยังไม่มีรายจ่ายเดือนนี้</div>';
+ $('list').innerHTML=items.length?items.map(x=>{
+  const c=CATS.find(k=>k.id===x.cat)||CATS[7];
+  const label=x.cat==='other'&&x.label?x.label:c.name;
+  const d=new Date(x.date).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+  return `<div class="item"><span class="dot" style="background:${c.c}">${label[0]}</span><div><p>${esc(x.note||label)}</p><small>${esc(label)} · ${d}</small></div><b>${fmt(x.amt)}</b><button class="del" data-id="${x.id}" aria-label="ลบ">×</button></div>`}).join(''):'<div class="empty">เริ่มจดรายการแรกได้เลย</div>';
+}
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+$('save').onclick=()=>{
+ const amt=parseFloat($('amt').value);
+ if(!(amt>0)){$('amt').focus();return}
+ data.push({id:Date.now(),cat:cur,amt,note:$('note').value.trim(),label:cur==='other'?$('other').value.trim():'',date:$('date').value||today()});
+ persist();$('amt').value='';$('note').value='';
+ const d=new Date($('date').value||today());view=new Date(d.getFullYear(),d.getMonth(),1);
+ render();$('amt').focus();
+};
+$('list').onclick=e=>{const b=e.target.closest('.del');if(b){data=data.filter(x=>x.id!=b.dataset.id);persist();render()}};
+$('prev').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);render()};
+$('next').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);render()};
+chips();render();
+</script>
+</body>
+</html>
